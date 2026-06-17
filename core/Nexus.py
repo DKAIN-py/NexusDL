@@ -119,6 +119,83 @@ class Nexus:
     def __repr__(self):
         return f"Nexus(value={self.value}, grads={self.grads})"
 
+    def sin(self):
+        out = Nexus(np.sin(self.value))
+        out._children = {self}
+
+        def _backward():
+            self.grads += self._handle_broadcast(out.grads*np.cos(self.value), self.dimension)
+        
+        out._backward = _backward
+
+        return out
+    
+    def cos(self):
+        out = Nexus(np.cos(self.value))
+        out._children = {self}
+
+        def _backward():
+            cos_prime = -np.sin(self.value)
+            self.grads += self._handle_broadcast(out.grads*cos_prime, self.dimension)
+        
+        out._backward = _backward
+
+        return out
+    
+    def log2(self):
+        out = Nexus(np.log2(self.value))
+        out._children = {self}
+
+        def _backward():
+            self.grads += self._handle_broadcast(out.grads*((1/self.value)*np.log(2)), self.dimension)
+        
+        out._backward = _backward
+
+        return out
+    
+    def log(self):
+        out = Nexus(np.log(self.value))
+        out._children = {self}
+
+        def _backward():
+            self.grads += self._handle_broadcast(out.grads*(1/self.value), self.dimension)
+
+        out._backward = _backward
+
+        return out
+
+    def exp(self):
+        out = Nexus(np.exp(self.value))
+        out._children = {self}
+
+        def _backward():
+            self.grads += self._handle_broadcast(out.grads*(out.value), self.dimension)
+
+        out._backward = _backward
+
+        return out
+
+    def backward(self):
+        topo = []
+        visited = set()
+
+        def build_topo(v: Nexus):
+            if v not in visited:
+                visited.add(v)
+                for child in v._children:
+                    build_topo(child)
+                topo.append(v)
+        
+        build_topo(self)
+
+        self.grads = np.ones_like(self.value, dtype=np.float32)
+
+        for node in reversed(topo):
+            node._backward()
+
+    def apply(self, func, *args, **kwargs):
+        return func(*args, **kwargs)
+
     def _handle_broadcast(self, grad, target_shape):
         # Used to handle numpy broadcasting
         if grad.shape == target_shape:
@@ -152,7 +229,3 @@ class Nexus:
             value = np.array(value, dtype=np.float32)
 
         self._value = value
-    
-
-
-    
