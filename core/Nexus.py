@@ -1,24 +1,29 @@
 import numpy as np
 
 class Nexus:
-    allowed_data_types = (list[int | float], np.ndarray, int, float)
+    _track_graph = True
     def __init__(self, value):
-        self.value = value
-        self.grads = np.zeros(shape=self.dimension)
+        self.value = np.array(value, dtype=np.float32) if not isinstance(value, np.ndarray) else value.astype(np.float32)
+        self.dimension = self.value.shape
+        self.grads = np.zeros(shape=self.dimension, dtype=np.float32)
         self._children = set()
-        self.dimension = np.shape(value)
+        
         self._backward = lambda: None
     
     def __add__(self, other):
-        other = other if isinstance(other, Nexus) else Nexus(other)
-        out = Nexus(self.value + other.value)
-        out._children = {self, other}
+        if not isinstance(other, Nexus):
+            other = Nexus(other)
+        out_val = self.value + other.value
+        children = (self, other) if Nexus._track_graph else ()
+        out = Nexus(out_val)
+        out._children = children
 
-        def _backward():
-            self.grads += self._handle_broadcast(out.grads, self.dimension)
-            other.grads += self._handle_broadcast(out.grads, other.dimension)
-        
-        out._backward = _backward
+        if Nexus._track_graph:
+            def _backward():
+                self.grads += self._handle_broadcast(out.grads, self.dimension)
+                other.grads += self._handle_broadcast(out.grads, other.dimension)
+
+            out._backward = _backward
 
         return out
     
@@ -31,11 +36,11 @@ class Nexus:
         out = Nexus(self.value - other.value)
         out._children = {self, other}
 
-        def _backward():
-            self.grads += self._handle_broadcast(out.grads, self.dimension)
-            other.grads += self._handle_broadcast(-out.grads, other.dimension)
-
-        out._backward = _backward
+        if Nexus._track_graph:
+            def _backward():
+                self.grads += self._handle_broadcast(out.grads, self.dimension)
+                other.grads += self._handle_broadcast(-out.grads, other.dimension)      
+            out._backward = _backward
 
         return out
     
@@ -49,11 +54,13 @@ class Nexus:
         out = Nexus(np.multiply(self.value,other.value))
         out._children = {self, other}
 
-        def _backward():
-            self.grads += self._handle_broadcast(out.grads*other.value, self.dimension)
-            other.grads += self._handle_broadcast(out.grads*self.value, other.dimension)
+        if Nexus._track_graph:
 
-        out._backward = _backward
+            def _backward():
+                self.grads += self._handle_broadcast(out.grads*other.value, self.dimension)
+                other.grads += self._handle_broadcast(out.grads*self.value, other.dimension)
+
+            out._backward = _backward
 
         return out
     
@@ -66,13 +73,15 @@ class Nexus:
         out = Nexus(np.divide(self.value, other.value))
         out._children = {self, other}
 
-        def _backward():
-            raw_grads_self =  np.divide(out.grads, other.value)
-            raw_grads_other = -np.divide( np.multiply(out.grads, self.value), np.square(other.value))
-            self.grads += self._handle_broadcast(raw_grads_self, self.dimension)
-            other.grads += self._handle_broadcast(raw_grads_other, other.dimension)
+        if Nexus._track_graph:
 
-        out._backward = _backward
+            def _backward():
+                raw_grads_self =  np.divide(out.grads, other.value)
+                raw_grads_other = -np.divide( np.multiply(out.grads, self.value), np.square(other.value))
+                self.grads += self._handle_broadcast(raw_grads_self, self.dimension)
+                other.grads += self._handle_broadcast(raw_grads_other, other.dimension)
+
+            out._backward = _backward
 
         return out
     
@@ -85,30 +94,37 @@ class Nexus:
         out = Nexus(np.power(self.value, power))
         out._children = {self}
 
-        def _backward():
-            self.grads += out.grads*(power*(self.value**(power-1)))
-        
-        out._backward = _backward
+        if Nexus._track_graph:
 
-        return out
+            def _backward():
+                self.grads += out.grads*(power*(self.value**(power-1)))
+
+            out._backward = _backward
+
+            return out
     
     def __rpow__(self, power):
         return self.__pow__(power)
     
     def __matmul__(self, other):
-        other = other if isinstance(other, Nexus) else Nexus(other)
+        if not isinstance(other, Nexus):
+            other = Nexus(other)
 
-        out = Nexus(np.matmul(self.value, other.value))
-        out._children = {self, other}
+        out_val = np.matmul(self.value, other.value)
+        children = (self, other) if Nexus._track_graph else ()
+        out = Nexus(out_val)
+        out._children = children
 
-        def _backward():
-            raw_grad_self = np.matmul(out.grads, other.value.T)
-            raw_grad_other = np.matmul(self.value.T, out.grads)
-
-            self.grads += self._handle_broadcast(raw_grad_self, self.dimension)
-            other.grads += self._handle_broadcast(raw_grad_other, other.dimension)
+        if Nexus._track_graph:
         
-        out._backward = _backward
+            def _backward():
+                raw_grad_self = np.matmul(out.grads, other.value.T)
+                raw_grad_other = np.matmul(self.value.T, out.grads)
+
+                self.grads += self._handle_broadcast(raw_grad_self, self.dimension)
+                other.grads += self._handle_broadcast(raw_grad_other, other.dimension)
+
+            out._backward = _backward
 
         return out
     
@@ -123,10 +139,12 @@ class Nexus:
         out = Nexus(np.sin(self.value))
         out._children = {self}
 
-        def _backward():
-            self.grads += self._handle_broadcast(out.grads*np.cos(self.value), self.dimension)
-        
-        out._backward = _backward
+        if Nexus._track_graph:
+            
+            def _backward():
+                self.grads += self._handle_broadcast(out.grads*np.cos(self.value), self.dimension)
+
+            out._backward = _backward
 
         return out
     
@@ -134,11 +152,13 @@ class Nexus:
         out = Nexus(np.cos(self.value))
         out._children = {self}
 
-        def _backward():
-            cos_prime = -np.sin(self.value)
-            self.grads += self._handle_broadcast(out.grads*cos_prime, self.dimension)
-        
-        out._backward = _backward
+        if Nexus._track_graph:
+
+            def _backward():
+                cos_prime = -np.sin(self.value)
+                self.grads += self._handle_broadcast(out.grads*cos_prime, self.dimension)
+
+            out._backward = _backward
 
         return out
     
@@ -146,10 +166,12 @@ class Nexus:
         out = Nexus(np.log2(self.value))
         out._children = {self}
 
-        def _backward():
-            self.grads += self._handle_broadcast(out.grads*((1/self.value)*np.log(2)), self.dimension)
-        
-        out._backward = _backward
+        if Nexus._track_graph:
+
+            def _backward():
+                self.grads += self._handle_broadcast(out.grads*((1/self.value)*np.log(2)), self.dimension)
+
+            out._backward = _backward
 
         return out
     
@@ -157,10 +179,12 @@ class Nexus:
         out = Nexus(np.log(self.value))
         out._children = {self}
 
-        def _backward():
-            self.grads += self._handle_broadcast(out.grads*(1/self.value), self.dimension)
+        if Nexus._track_graph:
 
-        out._backward = _backward
+            def _backward():
+                self.grads += self._handle_broadcast(out.grads*(1/self.value), self.dimension)
+
+            out._backward = _backward
 
         return out
 
@@ -168,10 +192,12 @@ class Nexus:
         out = Nexus(np.exp(self.value))
         out._children = {self}
 
-        def _backward():
-            self.grads += self._handle_broadcast(out.grads*(out.value), self.dimension)
+        if Nexus._track_graph:
 
-        out._backward = _backward
+            def _backward():
+                self.grads += self._handle_broadcast(out.grads*(out.value), self.dimension)
+
+            out._backward = _backward
 
         return out
 
@@ -222,10 +248,22 @@ class Nexus:
     
     @value.setter
     def value(self, value):
-        if not isinstance(value, self.allowed_data_types):
+        allowed_data_types = (list, np.ndarray, int, float)
+        if not isinstance(value, allowed_data_types):
             raise ValueError("Input should be either a python list or a numpy ndarray!")
 
-        if isinstance(value, list | int | float):
+        if isinstance(value, (list, int, float)):
             value = np.array(value, dtype=np.float32)
+        elif isinstance(value, np.ndarray):
+            value = value.astype(np.float32)
 
         self._value = value
+
+
+class no_grad:
+    def __enter__(self):
+        self.prev = Nexus._track_graph
+        Nexus._track_graph = False
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        Nexus._track_graph = self.prev

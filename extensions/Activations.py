@@ -1,6 +1,24 @@
 from core.Nexus import Nexus
 import numpy as np
 
+"""
+# compute refers to any operation neccesary for getting out_val
+
+def activation(node: Nexus) -> Nexus:
+    out_val = compute(node) 
+    out = Nexus(out_val)
+    out._childern = {node}
+
+    def _backward():
+        activation_prime = compute(node.value)
+        node.grads += out.grads*activation_prime
+
+    out._backward = _backward
+
+    return out
+"""
+
+
 def ReLU(node: Nexus) -> Nexus:
     out_val = np.maximum(0, node.value)
     out = Nexus(out_val)

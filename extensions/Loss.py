@@ -1,6 +1,24 @@
 from core.Nexus import Nexus
 import numpy as np
 
+"""
+# compute refers to any operation neccesary for getting out_val
+
+def loss(target: Nexus, prediction: Nexus) -> Nexus:
+    out_val = compute(target, prediction) 
+    out = Nexus(out_val)
+    out._childern = {prediction}
+
+    def _backward():
+        loss_prime = compute(node.value)
+        node.grads += prediction._handle_broadcast(out.grads*loss_prime, prediction.dimension)
+
+    out._backward = _backward
+
+    return out
+"""
+
+
 def MSError(target: Nexus, prediction: Nexus  ) -> Nexus:
     diff = prediction.value - target.value
     
@@ -17,7 +35,7 @@ def MSError(target: Nexus, prediction: Nexus  ) -> Nexus:
     return out
 
 def MAError(target: Nexus, prediction: Nexus) -> Nexus:
-    mod = prediction - target
+    mod = prediction.value - target.value
     error = 0.5*(np.mean(np.abs(mod)))
 
     out = Nexus(error)
@@ -64,7 +82,8 @@ def CategoricalCrossEntropyLoss(targets: Nexus, logits: Nexus) -> Nexus:
     clipped_probs = np.clip(probabilities, 1e-15, 1.0 - 1e-15)
     loss_val = -np.sum(targets.value * np.log(clipped_probs)) / batch_size
     
-    out = Nexus(loss_val, _children=(logits,), _op='SoftmaxCrossEntropyLoss')
+    out = Nexus(loss_val)
+    out._children = {logits}
 
     def _backward():
         local_derivative = (probabilities - targets.value) / batch_size        

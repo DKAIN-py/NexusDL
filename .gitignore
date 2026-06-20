@@ -8,3 +8,7 @@ wheels/
 
 # Virtual environments
 .venv
+
+extensions/regularizations.py
+
+test_core.py
