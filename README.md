@@ -201,7 +201,7 @@ uv run my_file.py
 
 ## How to add your own Layers, Activations, Loss and Optimizers
 
-* **Layers**:Navigate to ```extensions/Layers.py``` and create your activation function in this format only:
+* **Layers**:Navigate to ```extensions/Layers.py``` and create your layer in this format only:
 ```python
 # compute refers to any operation neccesary for getting forward pass
 
