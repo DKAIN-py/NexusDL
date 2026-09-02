@@ -12,3 +12,4 @@ wheels/
 extensions/regularizations.py
 
 test_core.py
+dummy_data.py

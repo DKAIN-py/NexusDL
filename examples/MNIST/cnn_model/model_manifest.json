@@ -1,0 +1,42 @@
+[
+    {
+        "index": 0,
+        "type": "Conv2D",
+        "weights_file": "layer_0_Conv2D_W.bin",
+        "bias_file": "layer_0_Conv2D_B.bin",
+        "shape_W": [
+            4,
+            9
+        ],
+        "shape_B": [
+            4,
+            9
+        ]
+    },
+    {
+        "index": 1,
+        "type": "ReLU"
+    },
+    {
+        "index": 2,
+        "type": "MaxPool2D"
+    },
+    {
+        "index": 3,
+        "type": "Flatten"
+    },
+    {
+        "index": 4,
+        "type": "Linear",
+        "weights_file": "layer_4_Linear_W.bin",
+        "bias_file": "layer_4_Linear_B.bin",
+        "shape_W": [
+            784,
+            10
+        ],
+        "shape_B": [
+            784,
+            10
+        ]
+    }
+]

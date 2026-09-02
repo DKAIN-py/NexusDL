@@ -18,71 +18,108 @@ def activation(node: Nexus) -> Nexus:
     return out
 """
 
-
-def ReLU(node: Nexus) -> Nexus:
-    out_val = np.maximum(0, node.value)
-    out = Nexus(out_val)
-    out._children = {node}
-
-    def _backward():
-        relu_prime = (node.value > 0).astype(np.float32)
-        node.grads += out.grads*relu_prime
-
-    out._backward = _backward
-
-    return out
-
-def sigmoid(node: Nexus) -> Nexus:
-    out_val = 1/(1 + np.exp(-np.clip(node.value, -500, 500)))
-    out = Nexus(out_val)
-    out._children = {node}
-
-    def _backward():
-        sigmoid_prime = out.value*(1-out.value)
-        node.grads += out.grads*sigmoid_prime
-
-    out._backward = _backward
-
-    return out
-
-def LReLU(node: Nexus, alpha=0.01) -> Nexus:
-    out_val = np.maximum(alpha*node.value, node.value)
-    out = Nexus(out_val)
-    out._children = {node}
-
-    def _backward():
-        lrelu_prime = np.where(node.value > 0, 1, alpha)
-        node.grads += out.grads*lrelu_prime
+class ReLU:
+    def __init__(self):
+        pass
     
-    out._backward = _backward
+    def __call__(self, node: Nexus) -> Nexus:
+        return self.forward(node)
 
-    return out
+    def forward(self, node: Nexus) -> Nexus:
+        out_val = np.maximum(0, node.value)
+        out = Nexus(out_val)
+        out._children = {node}
 
-def SiLU(node: Nexus) -> Nexus:
-    sig = 1/(1 + np.exp(-np.clip(node.value, -500, 500)))
-    out_val = node.value*sig
-    out = Nexus(out_val)
-    out._children = {node}
+        def _backward():
+            relu_prime = (node.value > 0).astype(np.float32)
+            node.grads += out.grads*relu_prime
 
-    def _backward():
-        silu_prime = out.value + sig*(1-out.value)
-        node.grads += out.grads*silu_prime
+        out._backward = _backward
 
-    out._backward = _backward
+        return out
 
-    return out
 
-def Softmax(node: Nexus):
-    logits = node.value - np.max(node.value, axis=-1, keepdims=True)
-    exps = np.exp(logits)
-    out_val = exps/np.sum(exps, axis=-1, keepdims=True)
-    out = Nexus(out_val)
-    out._children = {node}
+class Sigmoid:
+    def __int__(self):
+        pass
 
-    def _backward():
-        softmax_prime = np.sum(out.grads*out.value, axis=-1, keepdims=True)
-        node.grads += out.value*(out.grads - softmax_prime)
+    def __call__(self, node: Nexus) -> Nexus:
+        return self.forward(node)
     
-    out._backward = _backward
+    def forward(self, node: Nexus) -> Nexus:
+        out_val = 1/(1 + np.exp(-np.clip(node.value, -500, 500)))
+        out = Nexus(out_val)
+        out._children = {node}
 
-    return out
+        def _backward():
+            sigmoid_prime = out.value*(1-out.value)
+            node.grads += out.grads*sigmoid_prime
+
+        out._backward = _backward
+
+        return out
+
+
+class LReLU:
+    def __init__(self):
+        pass
+
+    def __call__(self, node: Nexus) -> Nexus:
+        return self.forward(node)
+    
+    def forward(self, node: Nexus, alpha=0.01) -> Nexus:
+        out_val = np.maximum(alpha*node.value, node.value)
+        out = Nexus(out_val)
+        out._children = {node}
+
+        def _backward():
+            lrelu_prime = np.where(node.value > 0, 1, alpha)
+            node.grads += out.grads*lrelu_prime
+
+        out._backward = _backward
+
+        return out
+
+
+class SiLU:
+    def __int__(self):
+        pass
+
+    def __call__(self, node: Nexus) -> Nexus:
+        return self.forward(node)
+    
+    def forward(self, node: Nexus) -> Nexus:
+        sig = 1/(1 + np.exp(-np.clip(node.value, -500, 500)))
+        out_val = node.value*sig
+        out = Nexus(out_val)
+        out._children = {node}
+
+        def _backward():
+            silu_prime = out.value + sig*(1-out.value)
+            node.grads += out.grads*silu_prime
+
+        out._backward = _backward
+
+        return out
+
+class Softmax:
+    def __int__(self):
+        pass
+
+    def __call__(self, node: Nexus) -> Nexus:
+        return self.forward(node)
+    
+    def forward(self, node: Nexus):
+        logits = node.value - np.max(node.value, anodeis=-1, keepdims=True)
+        enodeps = np.exp(logits)
+        out_val = enodeps/np.sum(enodeps, anodeis=-1, keepdims=True)
+        out = Nexus(out_val)
+        out._children = {node}
+
+        def _backward():
+            softmanode_prime = np.sum(out.grads*out.value, anodeis=-1, keepdims=True)
+            node.grads += out.value*(out.grads - softmanode_prime)
+
+        out._backward = _backward
+
+        return out

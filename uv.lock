@@ -154,6 +154,16 @@ wheels = [
 ]
 
 [[package]]
+name = "idx2numpy"
+version = "1.2.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "six" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/7e/6b/80628f6cc2f44d80b27f1ef7b57b257ed4c73766113b77d13ad110c091b4/idx2numpy-1.2.3.tar.gz", hash = "sha256:559b578a8f69a41af54cf15c8dfc43ab9f380e0a7d602a84bdabaf52acfbbd3e", size = 6800, upload-time = "2020-10-09T04:58:33.338Z" }
+
+[[package]]
 name = "joblib"
 version = "1.5.3"
 source = { registry = "https://pypi.org/simple" }
@@ -346,6 +356,7 @@ name = "nexusdl"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "idx2numpy" },
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "pandas" },
@@ -354,6 +365,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "idx2numpy", specifier = ">=1.2.3" },
     { name = "matplotlib", specifier = ">=3.11.0" },
     { name = "numpy", specifier = ">=2.4.6" },
     { name = "pandas", specifier = ">=3.0.3" },

@@ -10,6 +10,8 @@ class Nexus:
         
         self._backward = lambda: None
     
+    
+
     def __add__(self, other):
         if not isinstance(other, Nexus):
             other = Nexus(other)
@@ -101,7 +103,7 @@ class Nexus:
 
             out._backward = _backward
 
-            return out
+        return out
     
     def __rpow__(self, power):
         return self.__pow__(power)
@@ -132,8 +134,100 @@ class Nexus:
         other = other if isinstance(other, Nexus) else Nexus
         return other.__matmul__(self)
 
+    def __getitem__(self, idx):
+        out = Nexus(self.value[idx])
+        out._children = {self}
+
+        if Nexus._track_graph:
+            def _backward():
+                grad_full = np.zeros_like(self.value)
+                np.add.at(grad_full, idx, out.grads)
+                self.grads +=grad_full
+
+            out._backward = _backward
+
+        return out
+
     def __repr__(self):
         return f"Nexus(value={self.value}, grads={self.grads})"
+
+    def reshape(self, new_shape: tuple):
+        out = Nexus(self.value.reshape(new_shape))
+
+        out._children = {self}
+
+        if Nexus._track_graph:
+            def _backward():
+                self.grads += out.grads.reshape(self.dimension)
+
+            out._backward = _backward
+        
+        return out
+
+    def transpose(self, *axes):
+        if not axes:
+            axes = tuple(range(self.value.ndim))[::-1]
+        elif len(axes) == 1 and isinstance(axes[0], (tuple, list)):
+            axes = axes[0]
+
+        out = Nexus(np.transpose(self.value, axes))
+        out._children = {self}
+
+        if Nexus._track_graph:
+            def _backward():
+                inv_axs = np.argsort(axes)
+                self.grads += np.transpose(out.grads, inv_axs)
+            
+            out._backward = _backward
+        
+        return out
+    
+    @property
+    def T(self):
+        return self.transpose()
+
+    @staticmethod
+    def concat(tensors, axis=0):
+        out_val = np.concatenate([t.value for t in tensors], axis=axis)
+        out = Nexus(out_val)
+        out._children = set(tensors)
+
+        if Nexus._track_graph:
+            def _backward():
+                sections = np.cumsum([t.value.shape[axis] for t in tensors[:-1]])
+                grads = np.split(out.grads, sections, axis=axis)
+                for t, g in zip(tensors, grads):
+                    t.grads += t._handle_broadcast(np.squeeze(g, axis=axis), t.dimension)
+
+            out._backward = _backward
+
+        return out
+
+    def pad2d(self, padding: int | tuple = 0):
+        if isinstance(padding, int):
+            pad_h = pad_w = padding
+        else:
+            pad_h, pad_w = padding
+
+        if pad_h==0 and pad_w==0:
+            return self
+
+        pad_width = ((0,0), (0,0), (pad_h, pad_h), (pad_w, pad_w))
+        out_val = np.pad(self.value, pad_width, mode="constant", constant_values=0)
+
+        out = Nexus(out_val)
+        out._children = {self}
+
+        if Nexus._track_graph:
+            def _backward():
+                H,W = self.dimension[2], self.dimension[3]
+                grad_cropped = out.grads[:,:,pad_h:pad_h+H, pad_w:pad_w+W]
+                self.grads+=self._handle_broadcast(grad_cropped, self.dimension)
+
+            out._backward = _backward
+
+        return out
+
 
     def sin(self):
         out = Nexus(np.sin(self.value))
@@ -169,7 +263,7 @@ class Nexus:
         if Nexus._track_graph:
 
             def _backward():
-                self.grads += self._handle_broadcast(out.grads*((1/self.value)*np.log(2)), self.dimension)
+                self.grads += self._handle_broadcast(out.grads*((1/self.value*np.log(2))), self.dimension)
 
             out._backward = _backward
 
