@@ -13,3 +13,5 @@ extensions/regularizations.py
 
 test_core.py
 dummy_data.py
+
+iris_dummy_data.json

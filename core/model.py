@@ -40,6 +40,17 @@ class Sequential:
                 param_arrays[w_file] = layer.weights.value
                 param_arrays[b_file] = layer.bias.value
 
+                if layer_name=="Conv2D":
+                    meta_entry["kernel_size"] = layer.kernel_size
+                    meta_entry["in_channels"] = layer.in_channels
+                    meta_entry["out_channels"] = layer.out_channels
+                    meta_entry["stride"] = layer.stride
+                    meta_entry["padding"] = layer.padding
+
+                elif layer_name=="MaxPool2D":
+                    meta_entry["kernel_size"] = layer.kernel_size
+                    meta_entry["stride"] = layer.stride
+                
             model_meta.append(meta_entry)
         
         manifest_path = os.path.join(filepath, "model_manifest.json")

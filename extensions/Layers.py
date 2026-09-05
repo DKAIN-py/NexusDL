@@ -43,7 +43,6 @@ class Conv2D:
         self.weights = Nexus(np.random.uniform(-bound, bound, (out_channels, in_channels*kh*kw)))
         self.bias = Nexus(np.zeros((out_channels, 1)))
 
-        self.Z = None
 
     def __call__(self, x: Nexus) -> Nexus:
         N, C, H, W = x.dimension
