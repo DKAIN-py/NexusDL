@@ -35,7 +35,7 @@ class Sequential:
                 meta_entry["weights_file"] = w_file
                 meta_entry["bias_file"] = b_file
                 meta_entry["shape_W"] = layer.weights.value.shape
-                meta_entry["shape_B"] = layer.weights.value.shape
+                meta_entry["shape_B"] = layer.bias.value.shape
 
                 param_arrays[w_file] = layer.weights.value
                 param_arrays[b_file] = layer.bias.value
@@ -47,7 +47,7 @@ class Sequential:
                     meta_entry["stride"] = layer.stride
                     meta_entry["padding"] = layer.padding
 
-                elif layer_name=="MaxPool2D":
+                if layer_name=="MaxPool2D":
                     meta_entry["kernel_size"] = layer.kernel_size
                     meta_entry["stride"] = layer.stride
                 

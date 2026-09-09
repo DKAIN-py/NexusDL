@@ -10,7 +10,7 @@
         ],
         "shape_B": [
             4,
-            9
+            1
         ],
         "kernel_size": [
             3,
@@ -27,7 +27,12 @@
     },
     {
         "index": 2,
-        "type": "MaxPool2D"
+        "type": "MaxPool2D",
+        "kernel_size": [
+            2,
+            2
+        ],
+        "stride" : 2
     },
     {
         "index": 3,
@@ -43,8 +48,8 @@
             10
         ],
         "shape_B": [
-            784,
-            10
+            1,
+            784
         ]
     }
 ]
